@@ -1,24 +1,54 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Arduino Dashboard</title>
+  <title>REACT – IoT Reflex Analyzer</title>
   <style>
     body {
       font-family: Arial;
       text-align: center;
-      padding-top: 50px;
+      padding-top: 40px;
+      background: #f4f4f4;
     }
-    #state {
-      font-size: 40px;
+    h1 { margin-bottom: 10px; }
+    #reaction {
+      font-size: 60px;
       font-weight: bold;
       margin-top: 20px;
+    }
+    #indicator {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      margin: 20px auto;
+      background: gray;
+      transition: 0.3s;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      width: 300px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    li {
+      padding: 5px;
+      border-bottom: 1px solid #ddd;
     }
   </style>
 </head>
 <body>
 
-  <h1>Arduino Button Dashboard</h1>
-  <div id="state">Waiting for data...</div>
+  <h1>REACT</h1>
+  <h3>Analyzing Human Reflex and Focus Levels Using an IoT Reaction Time Device</h3>
+
+  <div id="indicator"></div>
+
+  <div id="reaction">Waiting...</div>
+
+  <h3>History</h3>
+  <ul id="history"></ul>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="client.js"></script>

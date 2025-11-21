@@ -8,28 +8,33 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-let buttonState = "UNKNOWN";
+let lastReaction = 0;
 
-// ---- Serve Dashboard HTML ----
+// Serve dashboard UI
 app.use(express.static("public"));
 
-// ---- Connect to Arduino ----
+// Arduino Serial Connection
 const port = new SerialPort({
-  path: "/dev/cu.usbserial-1120", // adjust this
-  baudRate: 9600,
+  path: "/dev/cu.usbserial-1120", // adjust for your mac
+  baudRate: 9600
 });
 
 const parser = port.pipe(new ReadlineParser({ delimiter: "\n" }));
 
-parser.on("data", (data) => {
-  buttonState = data.trim();
-  console.log("Button:", buttonState);
+parser.on("data", (line) => {
+  line = line.trim();
+  
+  if (line.startsWith("REACTION:")) {
+    const value = parseInt(line.split(":")[1]);
+    lastReaction = value;
 
-  // Send to all clients
-  io.emit("button_state", buttonState);
+    console.log("Reaction:", value);
+
+    // broadcast to dashboard
+    io.emit("reaction_time", value);
+  }
 });
 
-// ---- Start Server ----
-server.listen(3001, () => {
-  console.log("Dashboard running at http://localhost:3001");
+server.listen(3000, () => {
+  console.log("Dashboard available at http://localhost:3000");
 });
