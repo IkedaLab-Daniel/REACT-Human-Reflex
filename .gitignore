@@ -1,0 +1,23 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+
+# Env files
+.env
+.env.*
+
+# Misc
+*.swp
+*.swo
+
+# VS Code
+.vscode/

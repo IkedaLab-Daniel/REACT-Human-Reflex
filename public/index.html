@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Arduino Dashboard</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      padding-top: 50px;
+    }
+    #state {
+      font-size: 40px;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Arduino Button Dashboard</h1>
+  <div id="state">Waiting for data...</div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+
+</body>
+</html>
