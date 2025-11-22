@@ -7,7 +7,7 @@ const avgTimeEl = document.getElementById("avgTime");
 const bestTimeEl = document.getElementById("bestTime");
 const totalTestsEl = document.getElementById("totalTests");
 
-let records = [];
+let reactionRecords = []; // Store full record objects with _id
 let currentUser = null;
 
 // Check authentication status on load
@@ -48,6 +48,7 @@ function updateUserDisplay() {
   if (userDisplayEl && currentUser) {
     userDisplayEl.innerHTML = `
       <span>👤 ${currentUser.username}</span>
+      <button onclick="showLeaderboard()" class="leaderboard-btn">🏆 Leaderboard</button>
       <button onclick="logout()" class="logout-btn">Logout</button>
     `;
   }
@@ -72,7 +73,7 @@ async function loadHistory() {
     const res = await fetch('/api/reactions?limit=50');
     if (res.ok) {
       const data = await res.json();
-      records = data.reactions.map(r => r.reactionTime);
+      reactionRecords = data.reactions; // Store full objects
       updateHistory();
     }
   } catch (err) {
@@ -152,7 +153,8 @@ socket.on("reaction_time", async (ms) => {
     });
     
     if (res.ok) {
-      records.unshift(ms);
+      const data = await res.json();
+      reactionRecords.unshift(data.reaction); // Add full record object
       updateHistory();
       loadStats(); // Refresh statistics
     }
@@ -162,14 +164,14 @@ socket.on("reaction_time", async (ms) => {
 });
 
 socket.on('history_loaded', (reactions) => {
-  records = reactions.map(r => r.reactionTime);
+  reactionRecords = reactions; // Store full objects
   updateHistory();
 });
 
 function updateHistory() {
   if (!history) return;
   
-  if (records.length === 0) {
+  if (reactionRecords.length === 0) {
     history.innerHTML = `
       <div class="empty-state">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,11 +184,12 @@ function updateHistory() {
   }
   
   history.innerHTML = "";
-  records.slice(0, 10).forEach((item) => {
+  reactionRecords.slice(0, 10).forEach((record) => {
     const li = document.createElement("li");
     li.innerHTML = `
-      <span class="history-time">${item}ms</span>
-      <span class="history-label">${getPerformanceLabel(item)}</span>
+      <span class="history-time">${record.reactionTime}ms</span>
+      <span class="history-label">${getPerformanceLabel(record.reactionTime)}</span>
+      <button class="delete-btn" onclick="deleteReaction('${record._id}')" title="Delete">×</button>
     `;
     history.appendChild(li);
   });
@@ -340,7 +343,7 @@ async function logout() {
   try {
     await fetch('/api/auth/logout', { method: 'POST' });
     currentUser = null;
-    records = [];
+    reactionRecords = [];
     updateHistory();
     showAuthModal();
     
@@ -348,5 +351,101 @@ async function logout() {
     if (userDisplayEl) userDisplayEl.innerHTML = '';
   } catch (err) {
     console.error('Logout failed:', err);
+  }
+}
+
+// Delete reaction
+async function deleteReaction(id) {
+  if (!confirm('Delete this reaction time?')) return;
+  
+  try {
+    const res = await fetch(`/api/reactions/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      reactionRecords = reactionRecords.filter(r => r._id !== id);
+      updateHistory();
+      loadStats();
+    } else {
+      alert('Failed to delete reaction');
+    }
+  } catch (err) {
+    console.error('Delete failed:', err);
+    alert('Failed to delete reaction');
+  }
+}
+
+// Show leaderboard
+async function showLeaderboard() {
+  try {
+    const res = await fetch('/api/leaderboard');
+    if (!res.ok) throw new Error('Failed to load leaderboard');
+    
+    const data = await res.json();
+    displayLeaderboardModal(data.leaderboard);
+  } catch (err) {
+    console.error('Leaderboard error:', err);
+    alert('Failed to load leaderboard');
+  }
+}
+
+function displayLeaderboardModal(leaderboard) {
+  let modal = document.getElementById('leaderboardModal');
+  if (modal) modal.remove();
+  
+  modal = document.createElement('div');
+  modal.id = 'leaderboardModal';
+  modal.className = 'leaderboard-modal';
+  
+  let tableRows = '';
+  leaderboard.forEach((entry, index) => {
+    const rank = index + 1;
+    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `${rank}.`;
+    const isCurrentUser = currentUser && entry.username === currentUser.username;
+    const highlightClass = isCurrentUser ? 'highlight-user' : '';
+    
+    tableRows += `
+      <tr class="${highlightClass}">
+        <td class="rank-cell">${medal}</td>
+        <td class="username-cell">${entry.username}${isCurrentUser ? ' (You)' : ''}</td>
+        <td class="time-cell">${entry.bestTime}ms</td>
+        <td class="avg-cell">${entry.avgTime}ms</td>
+        <td class="tests-cell">${entry.totalTests}</td>
+      </tr>
+    `;
+  });
+  
+  modal.innerHTML = `
+    <div class="leaderboard-modal-content">
+      <div class="leaderboard-header">
+        <h2>🏆 Global Leaderboard</h2>
+        <button class="close-btn" onclick="closeLeaderboard()">×</button>
+      </div>
+      <div class="leaderboard-body">
+        <table class="leaderboard-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Player</th>
+              <th>Best Time</th>
+              <th>Avg Time</th>
+              <th>Tests</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRows || '<tr><td colspan="5" class="no-data">No data yet</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  setTimeout(() => modal.classList.add('show'), 10);
+}
+
+function closeLeaderboard() {
+  const modal = document.getElementById('leaderboardModal');
+  if (modal) {
+    modal.classList.remove('show');
+    setTimeout(() => modal.remove(), 300);
   }
 }

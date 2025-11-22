@@ -341,6 +341,73 @@ app.get("/api/stats", requireAuth, async (req, res) => {
   }
 });
 
+// Delete a reaction
+app.delete("/api/reactions/:id", requireAuth, async (req, res) => {
+  try {
+    const reaction = await Reaction.findOne({ 
+      _id: req.params.id, 
+      userId: req.session.userId 
+    });
+    
+    if (!reaction) {
+      return res.status(404).json({ error: "Reaction not found" });
+    }
+    
+    await Reaction.deleteOne({ _id: req.params.id });
+    res.json({ success: true, message: "Reaction deleted" });
+  } catch (err) {
+    console.error("Delete reaction error:", err);
+    res.status(500).json({ error: "Failed to delete reaction" });
+  }
+});
+
+// Get global leaderboard (top 50 users by best time)
+app.get("/api/leaderboard", async (req, res) => {
+  try {
+    // Aggregate to get each user's best time
+    const leaderboard = await Reaction.aggregate([
+      {
+        $group: {
+          _id: "$userId",
+          bestTime: { $min: "$reactionTime" },
+          avgTime: { $avg: "$reactionTime" },
+          totalTests: { $sum: 1 }
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "user"
+        }
+      },
+      {
+        $unwind: "$user"
+      },
+      {
+        $project: {
+          username: "$user.username",
+          bestTime: 1,
+          avgTime: { $round: ["$avgTime", 0] },
+          totalTests: 1
+        }
+      },
+      {
+        $sort: { bestTime: 1 }
+      },
+      {
+        $limit: 50
+      }
+    ]);
+    
+    res.json({ leaderboard });
+  } catch (err) {
+    console.error("Get leaderboard error:", err);
+    res.status(500).json({ error: "Failed to get leaderboard" });
+  }
+});
+
 // ============= ARDUINO CONTROL =============
 
 app.post("/start", (req, res) => {
