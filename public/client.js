@@ -193,6 +193,16 @@ window.addEventListener('load', () => {
   createAudioControls();
 });
 
+// Make functions globally accessible
+window.deleteReaction = deleteReaction;
+window.showLeaderboard = showLeaderboard;
+window.closeLeaderboard = closeLeaderboard;
+window.showAbout = showAbout;
+window.closeAbout = closeAbout;
+window.showLoginForm = showLoginForm;
+window.showRegisterForm = showRegisterForm;
+window.logout = logout;
+
 // Check authentication status on load
 checkAuth();
 
@@ -232,6 +242,7 @@ function updateUserDisplay() {
     userDisplayEl.innerHTML = `
       <span>👤 ${currentUser.username}</span>
       <button onclick="showLeaderboard()" class="leaderboard-btn">🏆 Leaderboard</button>
+      <button onclick="showAbout()" class="about-btn">ℹ️ About</button>
       <button onclick="logout()" class="logout-btn">Logout</button>
     `;
   }
@@ -567,6 +578,144 @@ async function logout() {
   }
 }
 
+// Show About Modal
+function showAbout() {
+  initAudio();
+  AudioSystem.playClick();
+  
+  displayAboutModal();
+}
+
+function displayAboutModal() {
+  let modal = document.getElementById('aboutModal');
+  if (modal) modal.remove();
+  
+  modal = document.createElement('div');
+  modal.id = 'aboutModal';
+  modal.className = 'about-modal';
+  
+  modal.innerHTML = `
+    <div class="about-modal-content">
+      <div class="about-header">
+        <h2>About REACT</h2>
+        <button class="close-btn" onclick="closeAbout()">×</button>
+      </div>
+      
+      <div class="about-body">
+        <div class="about-section">
+          <h3>🎮 The Project</h3>
+          <p><strong>REACT – IoT Reflex Analyzer</strong> is an innovative system designed to measure and analyze human reaction times using cutting-edge IoT technology. Combining Arduino hardware with modern web technologies, it creates an engaging platform for testing and tracking your reflexes.</p>
+          
+          <div class="tech-stack">
+            <span class="tech-badge">Arduino</span>
+            <span class="tech-badge">Node.js</span>
+            <span class="tech-badge">Express</span>
+            <span class="tech-badge">MongoDB</span>
+            <span class="tech-badge">Socket.IO</span>
+            <span class="tech-badge">Web Audio API</span>
+          </div>
+        </div>
+        
+        <div class="about-section">
+          <h3>✨ Key Features</h3>
+          <ul class="features-list">
+            <li>⚡ Real-time reaction measurement with millisecond precision</li>
+            <li>🔐 Secure user authentication and data persistence</li>
+            <li>📊 Personal statistics and global leaderboards</li>
+            <li>🎵 Immersive Game Boy-style audio experience</li>
+            <li>🌐 Real-time communication via WebSockets</li>
+            <li>🎨 Nostalgic retro-inspired UI design</li>
+          </ul>
+        </div>
+        
+        <div class="about-section">
+          <h3>🏗️ System Architecture</h3>
+          <p>The system consists of three integrated layers:</p>
+          <div class="architecture-grid">
+            <div class="arch-card">
+              <div class="arch-icon">🔌</div>
+              <h4>Hardware Layer</h4>
+              <p>Arduino microcontroller with LED indicator and physical button for precise input detection</p>
+            </div>
+            <div class="arch-card">
+              <div class="arch-icon">⚙️</div>
+              <h4>Backend Layer</h4>
+              <p>Node.js server managing serial communication, user authentication, and MongoDB database operations</p>
+            </div>
+            <div class="arch-card">
+              <div class="arch-icon">💻</div>
+              <h4>Frontend Layer</h4>
+              <p>Interactive web dashboard with real-time updates, retro aesthetics, and immersive audio</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="about-section">
+          <h3>👥 Development Team</h3>
+          <div class="team-grid">
+            <div class="team-member">
+              <div class="team-avatar">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=dev1" alt="Developer 1">
+              </div>
+              <h4>Developer 1</h4>
+              <p class="team-role">Hardware & Firmware</p>
+              <p class="team-desc">Arduino programming and circuit design</p>
+            </div>
+            <div class="team-member">
+              <div class="team-avatar">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=dev2" alt="Developer 2">
+              </div>
+              <h4>Developer 2</h4>
+              <p class="team-role">Backend Development</p>
+              <p class="team-desc">Server architecture and database design</p>
+            </div>
+            <div class="team-member">
+              <div class="team-avatar">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=dev3" alt="Developer 3">
+              </div>
+              <h4>Developer 3</h4>
+              <p class="team-role">Frontend Development</p>
+              <p class="team-desc">UI/UX design and client-side logic</p>
+            </div>
+            <div class="team-member">
+              <div class="team-avatar">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=dev4" alt="Developer 4">
+              </div>
+              <h4>Developer 4</h4>
+              <p class="team-role">Full Stack & Audio</p>
+              <p class="team-desc">Integration and audio system design</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="about-section">
+          <h3>🎯 Project Goals</h3>
+          <p>This project demonstrates the seamless integration of IoT hardware with modern web technologies to create an engaging, educational, and competitive platform for measuring human reflexes. It serves as both a practical tool for reaction time analysis and a showcase of full-stack development capabilities.</p>
+        </div>
+        
+        <div class="about-footer">
+          <p>Built with ❤️ using Arduino, Node.js, and Web Technologies</p>
+          <p class="version">Version 1.0.0 | 2025</p>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  setTimeout(() => modal.classList.add('show'), 10);
+}
+
+function closeAbout() {
+  initAudio();
+  AudioSystem.playClick();
+  
+  const modal = document.getElementById('aboutModal');
+  if (modal) {
+    modal.classList.remove('show');
+    setTimeout(() => modal.remove(), 300);
+  }
+}
+
 // Delete reaction
 async function deleteReaction(id) {
   initAudio();
@@ -636,7 +785,7 @@ function displayLeaderboardModal(leaderboard) {
   modal.innerHTML = `
     <div class="leaderboard-modal-content">
       <div class="leaderboard-header">
-        <h2>🏆 Leaderboard</h2>
+        <h2>🏆 Global Leaderboard</h2>
         <button class="close-btn" onclick="closeLeaderboard()">×</button>
       </div>
       <div class="leaderboard-body">

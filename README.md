@@ -5,45 +5,55 @@
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
 ![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
 ![Socket.IO](https://img.shields.io/badge/Socket.IO-010101?style=for-the-badge&logo=socket.io&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
 ![Arduino](https://img.shields.io/badge/Arduino-00979D?style=for-the-badge&logo=arduino&logoColor=white)
 
-This project, "REACT – IoT Reflex Analyzer", is an innovative system designed to measure and analyze human reaction times. It combines an Arduino-based hardware setup with a Node.js backend and a web-based frontend dashboard for real-time data visualization and interaction. The system aims to provide insights into human reflex and focus levels through engaging reaction time tests.
+This project, "REACT – IoT Reflex Analyzer", is an innovative system designed to measure and analyze human reaction times. It combines an Arduino-based hardware device with a Node.js backend and a web-based frontend dashboard for real-time data visualization, user authentication, and competitive leaderboards.
 
 ## Features
 
-*   **Real-time Reaction Time Measurement:** Utilizes an Arduino to accurately measure reaction times.
+*   **Real-time Reaction Time Measurement:** Utilizes an Arduino to accurately measure reaction times with millisecond precision.
+*   **User Authentication:** Secure user registration and login system with password hashing.
+*   **Persistent Data Storage:** Saves every reaction test to a user's profile using MongoDB.
 *   **Interactive Web Dashboard:** A "Game Boy"-inspired user interface for displaying reaction times, historical data, and system status.
-*   **Power Control:** Ability to power on/off the Arduino system directly from the web interface.
-*   **Real-time Communication:** Uses Socket.IO for seamless, bi-directional communication between the Arduino, Node.js server, and web client.
-*   **Historical Data:** Displays a history of recent reaction time tests.
-*   **Visual Feedback:** Provides immediate visual cues on the web dashboard based on reaction time performance.
+*   **Personal & Global Stats:** Tracks personal bests, averages, and a global leaderboard.
+*   **Hardware Control:** Ability to power the Arduino on/off directly from the web interface.
+*   **Real-time Communication:** Uses Socket.IO for seamless, bi-directional communication between the hardware, server, and web client.
+
+## Architecture
+
+The system is composed of three main parts:
+
+1.  **Hardware (Arduino):** A C++ sketch on an Arduino manages an LED and a button. It runs a game loop, measures reaction time, and communicates with the Node.js server via USB serial.
+2.  **Backend (Node.js/Express):** A server that acts as the central hub. It serves the web app, manages user data in MongoDB, provides a REST API for the frontend, and communicates with the Arduino.
+3.  **Frontend (Vanilla JS):** A single-page application that provides the UI. It uses Socket.IO for real-time updates and the Fetch API to interact with the backend.
+
+![System Architecture Diagram](./public/graph.svg)
 
 ## Technologies Used
 
 *   **Hardware:** Arduino
 *   **Firmware:** C++ (Arduino)
 *   **Backend:**
-    *   Node.js
-    *   Express.js (Web Framework)
-    *   Socket.IO (Real-time Bidirectional Event-based Communication)
-    *   SerialPort (Node.js interface to serial ports)
-    *   @serialport/parser-readline (Parser for serial data)
+    *   Node.js, Express.js
+    *   MongoDB with Mongoose
+    *   Socket.IO
+    *   `bcrypt` for password hashing
+    *   `express-session` for user sessions
+    *   `serialport` for Arduino communication
 *   **Frontend:**
-    *   HTML5
-    *   CSS3
-    *   JavaScript
-    *   Socket.IO (Client-side)
+    *   HTML5, CSS3, Vanilla JavaScript
+    *   Socket.IO (Client)
+    *   Web Audio API
 
 ## Getting Started
 
-To set up and run this project, follow these steps:
-
 ### Prerequisites
 
-*   Node.js (LTS version recommended)
+*   Node.js (LTS version)
+*   MongoDB (local or cloud instance)
 *   Arduino IDE
-*   Physical Arduino board (e.g., Uno, Nano) with appropriate sensors/buttons for reaction time measurement.
-*   Required Node.js packages (will be installed in the next step).
+*   A physical Arduino board (e.g., Uno, Nano) with a button and LED.
 
 ### Installation
 
@@ -52,58 +62,56 @@ To set up and run this project, follow these steps:
     git clone https://github.com/your-username/arduino-game-node.git
     cd arduino-game-node
     ```
-    *(Note: Replace `your-username/arduino-game-node.git` with the actual repository URL if different.)*
 
 2.  **Install Node.js dependencies:**
     ```bash
     npm install
     ```
 
-3.  **Arduino Setup:**
-    *   Open the `arduino.ino/main.ino` (or `simple-button.ino` depending on your specific setup) file in the Arduino IDE.
-    *   Ensure you have the `SerialPort` library installed in your Arduino IDE if your sketch uses it explicitly for advanced features, otherwise, standard `Serial` communication is usually sufficient.
+3.  **Create a `.env` file:**
+    Create a file named `.env` in the root of the project and add the following, replacing the placeholder values:
+    ```env
+    DATABASE_URL=mongodb://localhost:27017/react-game
+    SESSION_SECRET=a-secure-secret-key-for-sessions
+    ```
+
+4.  **Arduino Setup:**
+    *   Open `arduino.ino/main.ino` in the Arduino IDE.
     *   Upload the sketch to your Arduino board.
-    *   **Important:** Note the serial port your Arduino is connected to (e.g., `/dev/cu.usbserial-1120` on macOS, `COM3` on Windows). You will need to update `server.js` with this path.
+    *   Note the serial port your Arduino is connected to (e.g., `/dev/cu.usbserial-1120` on macOS, `COM3` on Windows).
 
 ### Configuration
 
 1.  **Update Serial Port in `server.js`:**
-    Open `server.js` and locate the `SerialPort` configuration:
+    Open `server.js` and find the `SerialPort` path. **Update this to your Arduino's serial port.**
     ```javascript
     const port = new SerialPort({
-      path: "/dev/cu.usbserial-1120", // adjust for your mac
+      path: "/dev/cu.usbserial-1120", // <-- CHANGE THIS
       baudRate: 9600
     });
     ```
-    Change the `path` to match the serial port of your Arduino board.
 
 ### Running the Application
 
 1.  **Start the Node.js server:**
     ```bash
-    node server.js
+    npm start
     ```
-    You should see output similar to:
-    ```
-    Serial port opened
-    Enforced POWER_OFF on Arduino
-    Dashboard available at http://localhost:3000
-    ```
+    The server will start, connect to the database and serial port, and be ready for connections.
 
 2.  **Access the Dashboard:**
     Open your web browser and navigate to `http://localhost:3000`.
 
-3.  **Interact with the Arduino:**
-    Use the "Power" button on the dashboard to turn on/off the Arduino system. The system will then be ready for reaction time tests.
+3.  **Play:**
+    Register or log in, then use the "Power" button on the dashboard to start the game on the Arduino.
 
 ## Project Structure
 
 *   `arduino.ino/`: Contains the Arduino sketches.
-*   `public/`: Frontend static files (HTML, CSS, JavaScript for the dashboard).
-*   `server.js`: Node.js backend server.
-*   `package.json`: Node.js project configuration and dependencies.
-*   `README.md`: Project documentation.
-*   `.gitignore`: Specifies intentionally untracked files to ignore.
+*   `public/`: Frontend static files (HTML, CSS, JS, assets).
+*   `server.js`: The core Node.js backend application.
+*   `.env`: Environment variables for configuration (DB connection, secrets).
+*   `package.json`: Project dependencies and scripts.
 
 ## Contribution
 
