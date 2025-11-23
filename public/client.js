@@ -604,7 +604,7 @@ function displayAboutModal() {
       <div class="about-body">
         <div class="about-section">
           <h3>🎮 The Project</h3>
-          <p><strong>REACT – IoT Reflex Analyzer</strong> is an innovative system designed to measure and analyze human reaction times using cutting-edge IoT technology. Combining Arduino hardware with modern web technologies, it creates an engaging platform for testing and tracking your reflexes.</p>
+          <p><strong>REACT: IoT Reflex Analyzer</strong> is an innovative system designed to measure and analyze human reaction times using cutting-edge IoT technology. Combining Arduino hardware with modern web technologies, it creates an engaging platform for testing and tracking your reflexes.</p>
           
           <div class="tech-stack">
             <span class="tech-badge">Arduino</span>
