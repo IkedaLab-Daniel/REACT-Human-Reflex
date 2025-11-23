@@ -6,22 +6,32 @@ const history = document.getElementById("history");
 
 let records = [];
 
-// Power control
+// Power control (improved UI)
 const powerBtn = document.getElementById("powerBtn");
+const powerDot = document.getElementById("powerDot");
+const powerLabel = document.getElementById("powerLabel");
 let powerOn = false;
 if (powerBtn) {
   powerBtn.addEventListener("click", () => {
     const target = powerOn ? "off" : "on";
+    // show pending state and prevent rapid clicks
+    powerBtn.classList.add('pending');
+    powerBtn.disabled = true;
     fetch(`/power/${target}`, { method: "POST" })
       .then((res) => {
         if (!res.ok) throw new Error("Power request failed");
-        // Wait for the server/Arduino to confirm via socket event
-        // optimistically disable the button briefly
-        powerBtn.disabled = true;
-        setTimeout(() => { powerBtn.disabled = false; }, 800);
+        // rely on socket 'power_state' ACK to update UI; keep button disabled briefly as fallback
+        setTimeout(() => {
+          if (powerBtn.classList.contains('pending')) {
+            powerBtn.classList.remove('pending');
+            powerBtn.disabled = false;
+          }
+        }, 3000);
       })
       .catch((err) => {
         console.error(err);
+        powerBtn.classList.remove('pending');
+        powerBtn.disabled = false;
         alert("Failed to change power state. See console for details.");
       });
   });
@@ -54,3 +64,16 @@ function updateHistory() {
     history.appendChild(li);
   });
 }
+
+// Sync power state from server (updated by Arduino ACKs)
+socket.on('power_state', (isOn) => {
+  powerOn = !!isOn;
+  if (!powerBtn) return;
+  powerBtn.classList.remove('pending');
+  powerBtn.disabled = false;
+  powerBtn.classList.toggle('power-on', powerOn);
+  powerBtn.classList.toggle('power-off', !powerOn);
+  powerBtn.setAttribute('aria-pressed', powerOn ? 'true' : 'false');
+  if (powerLabel) powerLabel.textContent = powerOn ? 'Power: On' : 'Power: Off';
+  if (powerDot) powerDot.style.background = powerOn ? 'limegreen' : '#ddd';
+});

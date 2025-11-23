@@ -5,7 +5,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
+  <div class="container game-boy">
     <div class="header">
       <h1>REACT</h1>
       <p class="subtitle">Analyzing Human Reflex and Focus Levels Using an IoT Reaction Time Device</p>
@@ -16,7 +16,10 @@
       <div class="reaction-label">Reaction Time</div>
       <div id="reaction">Waiting...</div>
       <div style="margin-top:12px;">
-        <button id="powerBtn">Power: Off</button>
+        <button id="powerBtn" class="power-btn power-off" aria-pressed="false">
+          <span class="power-dot" id="powerDot" aria-hidden="true"></span>
+          <span id="powerLabel">Power: Off</span>
+        </button>
       </div>
     </div>
 
