@@ -2,56 +2,57 @@
 <html>
 <head>
   <title>REACT – IoT Reflex Analyzer</title>
-  <style>
-    body {
-      font-family: Arial;
-      text-align: center;
-      padding-top: 40px;
-      background: #f4f4f4;
-    }
-    h1 { margin-bottom: 10px; }
-    #reaction {
-      font-size: 60px;
-      font-weight: bold;
-      margin-top: 20px;
-    }
-    #indicator {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      margin: 20px auto;
-      background: gray;
-      transition: 0.3s;
-    }
-    ul {
-      list-style: none;
-      padding: 0;
-      width: 300px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-    }
-    li {
-      padding: 5px;
-      border-bottom: 1px solid #ddd;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div class="container game-boy">
+    <div class="header">
+      <h1>REACT</h1>
+      <p class="subtitle">Analyzing Human Reflex and Focus Levels Using an IoT Reaction Time Device</p>
+    </div>
 
-  <h1>REACT</h1>
-  <h3>Analyzing Human Reflex and Focus Levels Using an IoT Reaction Time Device</h3>
+    <div class="status-section">
+      <div id="indicator"></div>
+      <div class="reaction-label">Reaction Time</div>
+      <div id="reaction">Waiting...</div>
+      <div style="margin-top:12px;">
+        <button id="powerBtn" class="power-btn power-off" aria-pressed="false">
+          <span class="power-dot" id="powerDot" aria-hidden="true"></span>
+          <span id="powerLabel">Power: Off</span>
+        </button>
+      </div>
+    </div>
 
-  <div id="indicator"></div>
-
-  <div id="reaction">Waiting...</div>
-
-  <h3>History</h3>
-  <ul id="history"></ul>
+    <div class="history-section">
+      <div class="history-header">
+        <h3>Recent Tests</h3>
+        <div class="stats">
+          <div class="stat-item">
+            <span class="stat-value" id="avgTime">—</span>
+            <span>Avg</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value" id="bestTime">—</span>
+            <span>Best</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value" id="totalTests">0</span>
+            <span>Tests</span>
+          </div>
+        </div>
+      </div>
+      <ul id="history">
+        <div class="empty-state">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <div>No reaction times recorded yet</div>
+        </div>
+      </ul>
+    </div>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="client.js"></script>
-
 </body>
 </html>
