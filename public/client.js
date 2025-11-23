@@ -655,33 +655,33 @@ function displayAboutModal() {
           <div class="team-grid">
             <div class="team-member">
               <div class="team-avatar">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=dev1" alt="Developer 1">
+                <img src="/images/vince.jpg" alt="Developer 1" onerror="this.onerror=null;this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=dev1'" />
               </div>
-              <h4>Developer 1</h4>
+              <h4>Vince Garcia</h4>
               <p class="team-role">Hardware & Firmware</p>
               <p class="team-desc">Arduino programming and circuit design</p>
             </div>
             <div class="team-member">
               <div class="team-avatar">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=dev2" alt="Developer 2">
+                <img src="/images/ice.jpeg" alt="Developer 2" onerror="this.onerror=null;this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=dev2'" />
               </div>
-              <h4>Developer 2</h4>
+              <h4>Daniel Callejas</h4>
               <p class="team-role">Backend Development</p>
               <p class="team-desc">Server architecture and database design</p>
             </div>
             <div class="team-member">
               <div class="team-avatar">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=dev3" alt="Developer 3">
+                <img src="/images/brix2.jpeg" alt="Developer 3" onerror="this.onerror=null;this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=dev3'" />
               </div>
-              <h4>Developer 3</h4>
+              <h4>Brix Ibuna</h4>
               <p class="team-role">Frontend Development</p>
               <p class="team-desc">UI/UX design and client-side logic</p>
             </div>
             <div class="team-member">
               <div class="team-avatar">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=dev4" alt="Developer 4">
+                <img src="/images/alvin.png" alt="Developer 4" onerror="this.onerror=null;this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=dev4'" />
               </div>
-              <h4>Developer 4</h4>
+              <h4>Alvin Jr. Castro</h4>
               <p class="team-role">Full Stack & Audio</p>
               <p class="team-desc">Integration and audio system design</p>
             </div>

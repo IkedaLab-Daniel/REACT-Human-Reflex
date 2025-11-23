@@ -66,6 +66,8 @@ const requireAuth = (req, res, next) => {
 
 // Serve static files
 app.use(express.static("public"));
+// Also serve a top-level /images folder (keeps images in project root accessible at /images/...)
+app.use('/images', express.static('images'));
 
 // Arduino Serial Connection
 let port;
