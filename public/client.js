@@ -10,6 +10,189 @@ const totalTestsEl = document.getElementById("totalTests");
 let reactionRecords = []; // Store full record objects with _id
 let currentUser = null;
 
+// Audio System
+const AudioSystem = {
+  context: null,
+  masterGain: null,
+  bgMusic: null,
+  isMusicPlaying: false,
+  isMuted: false,
+  
+  init() {
+    this.context = new (window.AudioContext || window.webkitAudioContext)();
+    this.masterGain = this.context.createGain();
+    this.masterGain.gain.value = 0.3;
+    this.masterGain.connect(this.context.destination);
+  },
+  
+  // Game Boy style beep sound
+  playBeep(frequency = 440, duration = 0.1, type = 'square') {
+    if (this.isMuted) return;
+    const osc = this.context.createOscillator();
+    const gain = this.context.createGain();
+    
+    osc.type = type;
+    osc.frequency.value = frequency;
+    
+    gain.gain.setValueAtTime(0.2, this.context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + duration);
+    
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    
+    osc.start(this.context.currentTime);
+    osc.stop(this.context.currentTime + duration);
+  },
+  
+  // Click/button press sound
+  playClick() {
+    this.playBeep(800, 0.05, 'square');
+  },
+  
+  // Power on sound
+  playPowerOn() {
+    this.playBeep(400, 0.1, 'square');
+    setTimeout(() => this.playBeep(600, 0.1, 'square'), 100);
+    setTimeout(() => this.playBeep(800, 0.15, 'square'), 200);
+  },
+  
+  // Power off sound
+  playPowerOff() {
+    this.playBeep(800, 0.1, 'square');
+    setTimeout(() => this.playBeep(600, 0.1, 'square'), 100);
+    setTimeout(() => this.playBeep(400, 0.15, 'square'), 200);
+  },
+  
+  // Success/reaction recorded sound
+  playSuccess() {
+    this.playBeep(523, 0.1, 'square'); // C
+    setTimeout(() => this.playBeep(659, 0.1, 'square'), 100); // E
+    setTimeout(() => this.playBeep(784, 0.2, 'square'), 200); // G
+  },
+  
+  // Fast reaction (under 300ms)
+  playFastReaction() {
+    this.playBeep(1047, 0.08, 'square'); // C
+    setTimeout(() => this.playBeep(1319, 0.08, 'square'), 80); // E
+    setTimeout(() => this.playBeep(1568, 0.08, 'square'), 160); // G
+    setTimeout(() => this.playBeep(2093, 0.15, 'square'), 240); // C
+  },
+  
+  // Delete sound
+  playDelete() {
+    this.playBeep(800, 0.08, 'sawtooth');
+    setTimeout(() => this.playBeep(600, 0.08, 'sawtooth'), 80);
+    setTimeout(() => this.playBeep(400, 0.12, 'sawtooth'), 160);
+  },
+  
+  // Game Boy background music loop
+  startBackgroundMusic() {
+    if (this.isMusicPlaying || this.isMuted) return;
+    this.isMusicPlaying = true;
+    this.playMusicLoop();
+  },
+  
+  stopBackgroundMusic() {
+    this.isMusicPlaying = false;
+  },
+  
+  playMusicLoop() {
+    if (!this.isMusicPlaying) return;
+    
+    // Simple Game Boy style melody
+    const melody = [
+      { freq: 523, dur: 0.2 },  // C
+      { freq: 659, dur: 0.2 },  // E
+      { freq: 784, dur: 0.2 },  // G
+      { freq: 659, dur: 0.2 },  // E
+      { freq: 698, dur: 0.3 },  // F
+      { freq: 784, dur: 0.3 },  // G
+      { freq: 880, dur: 0.4 },  // A
+      { freq: 0, dur: 0.2 },    // Rest
+    ];
+    
+    let time = 0;
+    melody.forEach(note => {
+      if (note.freq > 0) {
+        setTimeout(() => {
+          if (this.isMusicPlaying) {
+            this.playBeep(note.freq, note.dur * 0.8, 'square');
+          }
+        }, time * 1000);
+      }
+      time += note.dur;
+    });
+    
+    // Loop after melody finishes
+    setTimeout(() => {
+      if (this.isMusicPlaying) this.playMusicLoop();
+    }, time * 1000 + 500);
+  },
+  
+  toggleMute() {
+    this.isMuted = !this.isMuted;
+    if (this.isMuted) {
+      this.stopBackgroundMusic();
+    }
+    return this.isMuted;
+  }
+};
+
+// Initialize audio on first user interaction
+let audioInitialized = false;
+function initAudio() {
+  if (!audioInitialized) {
+    AudioSystem.init();
+    audioInitialized = true;
+    console.log('🔊 Audio system initialized');
+  }
+}
+
+// Add audio controls to UI
+function createAudioControls() {
+  const controls = document.createElement('div');
+  controls.className = 'audio-controls';
+  controls.innerHTML = `
+    <button id="musicToggle" class="audio-btn" title="Toggle Music">
+      🎵
+    </button>
+    <button id="muteToggle" class="audio-btn" title="Mute All">
+      🔊
+    </button>
+  `;
+  document.querySelector('.container').appendChild(controls);
+  
+  // Music toggle
+  document.getElementById('musicToggle').addEventListener('click', () => {
+    initAudio();
+    AudioSystem.playClick();
+    
+    if (AudioSystem.isMusicPlaying) {
+      AudioSystem.stopBackgroundMusic();
+      document.getElementById('musicToggle').innerHTML = '🎵';
+      document.getElementById('musicToggle').style.opacity = '0.5';
+    } else {
+      AudioSystem.startBackgroundMusic();
+      document.getElementById('musicToggle').innerHTML = '🎶';
+      document.getElementById('musicToggle').style.opacity = '1';
+    }
+  });
+  
+  // Mute toggle
+  document.getElementById('muteToggle').addEventListener('click', () => {
+    initAudio();
+    const isMuted = AudioSystem.toggleMute();
+    document.getElementById('muteToggle').innerHTML = isMuted ? '🔇' : '🔊';
+    document.getElementById('muteToggle').style.opacity = isMuted ? '0.5' : '1';
+    if (!isMuted) AudioSystem.playClick();
+  });
+}
+
+// Create audio controls after page load
+window.addEventListener('load', () => {
+  createAudioControls();
+});
+
 // Check authentication status on load
 checkAuth();
 
@@ -89,6 +272,9 @@ let powerOn = false;
 
 if (powerBtn) {
   powerBtn.addEventListener("click", () => {
+    initAudio();
+    AudioSystem.playClick();
+    
     if (!currentUser) {
       alert('Please log in first');
       return;
@@ -122,6 +308,15 @@ socket.on('power_state', (isOn) => {
   powerOn = !!isOn;
   if (!powerBtn) return;
   
+  // Play power sound
+  if (audioInitialized) {
+    if (isOn) {
+      AudioSystem.playPowerOn();
+    } else {
+      AudioSystem.playPowerOff();
+    }
+  }
+  
   powerBtn.classList.remove('pending');
   powerBtn.disabled = false;
   powerBtn.classList.toggle('power-on', powerOn);
@@ -143,6 +338,15 @@ socket.on("reaction_time", async (ms) => {
   if (ms < 300) indicator.style.background = "limegreen";
   else if (ms < 450) indicator.style.background = "orange";
   else indicator.style.background = "red";
+  
+  // Play appropriate sound
+  if (audioInitialized) {
+    if (ms < 300) {
+      AudioSystem.playFastReaction(); // Special sound for fast reactions
+    } else {
+      AudioSystem.playSuccess();
+    }
+  }
 
   // Save to database
   try {
@@ -324,6 +528,9 @@ function createAuthModal() {
 }
 
 function showLoginForm() {
+  initAudio();
+  AudioSystem.playClick();
+  
   document.getElementById('loginForm').style.display = 'block';
   document.getElementById('registerForm').style.display = 'none';
   document.querySelectorAll('.auth-tab').forEach((tab, i) => {
@@ -332,6 +539,9 @@ function showLoginForm() {
 }
 
 function showRegisterForm() {
+  initAudio();
+  AudioSystem.playClick();
+  
   document.getElementById('loginForm').style.display = 'none';
   document.getElementById('registerForm').style.display = 'block';
   document.querySelectorAll('.auth-tab').forEach((tab, i) => {
@@ -340,6 +550,9 @@ function showRegisterForm() {
 }
 
 async function logout() {
+  initAudio();
+  AudioSystem.playClick();
+  
   try {
     await fetch('/api/auth/logout', { method: 'POST' });
     currentUser = null;
@@ -356,7 +569,11 @@ async function logout() {
 
 // Delete reaction
 async function deleteReaction(id) {
+  initAudio();
+  
   if (!confirm('Delete this reaction time?')) return;
+  
+  AudioSystem.playDelete();
   
   try {
     const res = await fetch(`/api/reactions/${id}`, { method: 'DELETE' });
@@ -375,6 +592,9 @@ async function deleteReaction(id) {
 
 // Show leaderboard
 async function showLeaderboard() {
+  initAudio();
+  AudioSystem.playClick();
+  
   try {
     const res = await fetch('/api/leaderboard');
     if (!res.ok) throw new Error('Failed to load leaderboard');
@@ -416,7 +636,7 @@ function displayLeaderboardModal(leaderboard) {
   modal.innerHTML = `
     <div class="leaderboard-modal-content">
       <div class="leaderboard-header">
-        <h2>🏆 Global Leaderboard</h2>
+        <h2>🏆 Leaderboard</h2>
         <button class="close-btn" onclick="closeLeaderboard()">×</button>
       </div>
       <div class="leaderboard-body">
