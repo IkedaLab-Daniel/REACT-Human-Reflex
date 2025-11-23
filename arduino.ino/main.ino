@@ -5,7 +5,7 @@ int powerLedPin = 9; // red LED indicating power state
 unsigned long startTime;
 bool waitingForReaction = false;
 unsigned long reactionTime = 0;
-bool powered = true; // whether the device is active
+bool powered = false; // whether the device is active (start OFF by default)
 String serialBuf = "";
 
 void setup() {
@@ -15,6 +15,10 @@ void setup() {
   pinMode(buttonPin, INPUT_PULLUP);
   pinMode(powerLedPin, OUTPUT);
   digitalWrite(powerLedPin, powered ? HIGH : LOW);
+  // Explicitly announce initial power-off state
+  if (!powered) {
+    Serial.println("ACK:POWER_OFF");
+  }
   randomSeed(analogRead(A0));
 }
 

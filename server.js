@@ -9,6 +9,7 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 let lastReaction = 0;
+let powerState = false; // track current power state (start OFF)
 
 // Serve dashboard UI
 app.use(express.static("public"));
@@ -33,6 +34,30 @@ parser.on("data", (line) => {
     // broadcast to dashboard
     io.emit("reaction_time", value);
   }
+  // Handle ACKs from Arduino for power state
+  else if (line.startsWith("ACK:POWER_ON")) {
+    powerState = true;
+    console.log('Arduino ACK power ON');
+    io.emit('power_state', powerState);
+  } else if (line.startsWith("ACK:POWER_OFF")) {
+    powerState = false;
+    console.log('Arduino ACK power OFF');
+    io.emit('power_state', powerState);
+  }
+});
+
+// Notify connected clients of current power state on socket connect
+io.on('connection', (socket) => {
+  socket.emit('power_state', powerState);
+});
+
+// When serial port opens, ensure Arduino starts powered OFF
+port.on('open', () => {
+  console.log('Serial port opened');
+  port.write('POWER_OFF\n', (err) => {
+    if (err) console.error('Failed to enforce POWER_OFF on open:', err);
+    else console.log('Enforced POWER_OFF on Arduino');
+  });
 });
 
 // Start test (kept for compatibility)
@@ -60,7 +85,8 @@ app.post("/power/:state", (req, res) => {
       console.error("Error writing power command:", err);
       return res.status(500).send("Failed");
     }
-    console.log("Sent", cmd.trim());
+    powerState = (state === 'on');
+    console.log("Sent", cmd.trim(), "(powerState=", powerState, ")");
     res.send("OK");
   });
 });
