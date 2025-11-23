@@ -1,16 +1,23 @@
 const socket = io();
 
+// ========== DOM ELEMENTS ==========
 const reactionEl = document.getElementById("reaction");
 const indicator = document.getElementById("indicator");
 const history = document.getElementById("history");
 const avgTimeEl = document.getElementById("avgTime");
 const bestTimeEl = document.getElementById("bestTime");
 const totalTestsEl = document.getElementById("totalTests");
+const powerBtn = document.getElementById("powerBtn");
+const powerDot = document.getElementById("powerDot");
+const powerLabel = document.getElementById("powerLabel");
 
-let reactionRecords = []; // Store full record objects with _id
+// ========== STATE ==========
+let reactionRecords = [];
 let currentUser = null;
+let powerOn = false;
+let audioInitialized = false;
 
-// Audio System
+// ========== AUDIO SYSTEM ==========
 const AudioSystem = {
   context: null,
   masterGain: null,
@@ -25,9 +32,9 @@ const AudioSystem = {
     this.masterGain.connect(this.context.destination);
   },
   
-  // Game Boy style beep sound
   playBeep(frequency = 440, duration = 0.1, type = 'square') {
     if (this.isMuted) return;
+    
     const osc = this.context.createOscillator();
     const gain = this.context.createGain();
     
@@ -44,48 +51,41 @@ const AudioSystem = {
     osc.stop(this.context.currentTime + duration);
   },
   
-  // Click/button press sound
   playClick() {
     this.playBeep(800, 0.05, 'square');
   },
   
-  // Power on sound
   playPowerOn() {
     this.playBeep(400, 0.1, 'square');
     setTimeout(() => this.playBeep(600, 0.1, 'square'), 100);
     setTimeout(() => this.playBeep(800, 0.15, 'square'), 200);
   },
   
-  // Power off sound
   playPowerOff() {
     this.playBeep(800, 0.1, 'square');
     setTimeout(() => this.playBeep(600, 0.1, 'square'), 100);
     setTimeout(() => this.playBeep(400, 0.15, 'square'), 200);
   },
   
-  // Success/reaction recorded sound
   playSuccess() {
-    this.playBeep(523, 0.1, 'square'); // C
-    setTimeout(() => this.playBeep(659, 0.1, 'square'), 100); // E
-    setTimeout(() => this.playBeep(784, 0.2, 'square'), 200); // G
+    this.playBeep(523, 0.1, 'square');
+    setTimeout(() => this.playBeep(659, 0.1, 'square'), 100);
+    setTimeout(() => this.playBeep(784, 0.2, 'square'), 200);
   },
   
-  // Fast reaction (under 300ms)
   playFastReaction() {
-    this.playBeep(1047, 0.08, 'square'); // C
-    setTimeout(() => this.playBeep(1319, 0.08, 'square'), 80); // E
-    setTimeout(() => this.playBeep(1568, 0.08, 'square'), 160); // G
-    setTimeout(() => this.playBeep(2093, 0.15, 'square'), 240); // C
+    this.playBeep(1047, 0.08, 'square');
+    setTimeout(() => this.playBeep(1319, 0.08, 'square'), 80);
+    setTimeout(() => this.playBeep(1568, 0.08, 'square'), 160);
+    setTimeout(() => this.playBeep(2093, 0.15, 'square'), 240);
   },
   
-  // Delete sound
   playDelete() {
     this.playBeep(800, 0.08, 'sawtooth');
     setTimeout(() => this.playBeep(600, 0.08, 'sawtooth'), 80);
     setTimeout(() => this.playBeep(400, 0.12, 'sawtooth'), 160);
   },
   
-  // Game Boy background music loop
   startBackgroundMusic() {
     if (this.isMusicPlaying || this.isMuted) return;
     this.isMusicPlaying = true;
@@ -99,16 +99,15 @@ const AudioSystem = {
   playMusicLoop() {
     if (!this.isMusicPlaying) return;
     
-    // Simple Game Boy style melody
     const melody = [
-      { freq: 523, dur: 0.2 },  // C
-      { freq: 659, dur: 0.2 },  // E
-      { freq: 784, dur: 0.2 },  // G
-      { freq: 659, dur: 0.2 },  // E
-      { freq: 698, dur: 0.3 },  // F
-      { freq: 784, dur: 0.3 },  // G
-      { freq: 880, dur: 0.4 },  // A
-      { freq: 0, dur: 0.2 },    // Rest
+      { freq: 523, dur: 0.2 },
+      { freq: 659, dur: 0.2 },
+      { freq: 784, dur: 0.2 },
+      { freq: 659, dur: 0.2 },
+      { freq: 698, dur: 0.3 },
+      { freq: 784, dur: 0.3 },
+      { freq: 880, dur: 0.4 },
+      { freq: 0, dur: 0.2 },
     ];
     
     let time = 0;
@@ -123,7 +122,6 @@ const AudioSystem = {
       time += note.dur;
     });
     
-    // Loop after melody finishes
     setTimeout(() => {
       if (this.isMusicPlaying) this.playMusicLoop();
     }, time * 1000 + 500);
@@ -138,8 +136,7 @@ const AudioSystem = {
   }
 };
 
-// Initialize audio on first user interaction
-let audioInitialized = false;
+// ========== INITIALIZATION ==========
 function initAudio() {
   if (!audioInitialized) {
     AudioSystem.init();
@@ -148,21 +145,15 @@ function initAudio() {
   }
 }
 
-// Add audio controls to UI
 function createAudioControls() {
   const controls = document.createElement('div');
   controls.className = 'audio-controls';
   controls.innerHTML = `
-    <button id="musicToggle" class="audio-btn" title="Toggle Music">
-      🎵
-    </button>
-    <button id="muteToggle" class="audio-btn" title="Mute All">
-      🔊
-    </button>
+    <button id="musicToggle" class="audio-btn" title="Toggle Music">🎵</button>
+    <button id="muteToggle" class="audio-btn" title="Mute All">🔊</button>
   `;
   document.querySelector('.container').appendChild(controls);
   
-  // Music toggle
   document.getElementById('musicToggle').addEventListener('click', () => {
     initAudio();
     AudioSystem.playClick();
@@ -178,7 +169,6 @@ function createAudioControls() {
     }
   });
   
-  // Mute toggle
   document.getElementById('muteToggle').addEventListener('click', () => {
     initAudio();
     const isMuted = AudioSystem.toggleMute();
@@ -188,24 +178,7 @@ function createAudioControls() {
   });
 }
 
-// Create audio controls after page load
-window.addEventListener('load', () => {
-  createAudioControls();
-});
-
-// Make functions globally accessible
-window.deleteReaction = deleteReaction;
-window.showLeaderboard = showLeaderboard;
-window.closeLeaderboard = closeLeaderboard;
-window.showAbout = showAbout;
-window.closeAbout = closeAbout;
-window.showLoginForm = showLoginForm;
-window.showRegisterForm = showRegisterForm;
-window.logout = logout;
-
-// Check authentication status on load
-checkAuth();
-
+// ========== AUTHENTICATION ==========
 async function checkAuth() {
   try {
     const res = await fetch('/api/auth/me');
@@ -224,14 +197,8 @@ async function checkAuth() {
 
 function onAuthenticated() {
   hideAuthModal();
-  
-  // Authenticate socket connection
   socket.emit('authenticate', { userId: currentUser.id });
-  
-  // Show user info
   updateUserDisplay();
-  
-  // Load stats and history
   loadStats();
   loadHistory();
 }
@@ -248,6 +215,7 @@ function updateUserDisplay() {
   }
 }
 
+// ========== DATA LOADING ==========
 async function loadStats() {
   try {
     const res = await fetch('/api/stats');
@@ -267,7 +235,7 @@ async function loadHistory() {
     const res = await fetch('/api/reactions?limit=50');
     if (res.ok) {
       const data = await res.json();
-      reactionRecords = data.reactions; // Store full objects
+      reactionRecords = data.reactions;
       updateHistory();
     }
   } catch (err) {
@@ -275,12 +243,43 @@ async function loadHistory() {
   }
 }
 
-// Power control
-const powerBtn = document.getElementById("powerBtn");
-const powerDot = document.getElementById("powerDot");
-const powerLabel = document.getElementById("powerLabel");
-let powerOn = false;
+function updateHistory() {
+  if (!history) return;
+  
+  if (reactionRecords.length === 0) {
+    history.innerHTML = `
+      <div class="empty-state">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <div>No reaction times recorded yet</div>
+      </div>
+    `;
+    return;
+  }
+  
+  history.innerHTML = "";
+  reactionRecords.slice(0, 10).forEach((record) => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <span class="history-time">${record.reactionTime}ms</span>
+      <span class="history-label">${getPerformanceLabel(record.reactionTime)}</span>
+      <button class="delete-btn" onclick="deleteReaction('${record._id}')" title="Delete">×</button>
+    `;
+    history.appendChild(li);
+  });
+}
 
+function getPerformanceLabel(ms) {
+  if (ms < 250) return '🔥 Lightning';
+  if (ms < 350) return '⚡ Fast';
+  if (ms < 450) return '✓ Good';
+  if (ms < 600) return '○ Average';
+  return '○ Slow';
+}
+
+// ========== POWER CONTROL ==========
 if (powerBtn) {
   powerBtn.addEventListener("click", () => {
     initAudio();
@@ -314,12 +313,11 @@ if (powerBtn) {
   });
 }
 
-// Socket events
+// ========== SOCKET EVENTS ==========
 socket.on('power_state', (isOn) => {
   powerOn = !!isOn;
   if (!powerBtn) return;
   
-  // Play power sound
   if (audioInitialized) {
     if (isOn) {
       AudioSystem.playPowerOn();
@@ -345,21 +343,18 @@ socket.on("reaction_time", async (ms) => {
   indicator.classList.remove('active', 'success');
   indicator.classList.add('success');
 
-  // Color coding
   if (ms < 300) indicator.style.background = "limegreen";
   else if (ms < 450) indicator.style.background = "orange";
   else indicator.style.background = "red";
   
-  // Play appropriate sound
   if (audioInitialized) {
     if (ms < 300) {
-      AudioSystem.playFastReaction(); // Special sound for fast reactions
+      AudioSystem.playFastReaction();
     } else {
       AudioSystem.playSuccess();
     }
   }
 
-  // Save to database
   try {
     const res = await fetch('/api/reactions', {
       method: 'POST',
@@ -369,9 +364,9 @@ socket.on("reaction_time", async (ms) => {
     
     if (res.ok) {
       const data = await res.json();
-      reactionRecords.unshift(data.reaction); // Add full record object
+      reactionRecords.unshift(data.reaction);
       updateHistory();
-      loadStats(); // Refresh statistics
+      loadStats();
     }
   } catch (err) {
     console.error('Failed to save reaction:', err);
@@ -379,47 +374,11 @@ socket.on("reaction_time", async (ms) => {
 });
 
 socket.on('history_loaded', (reactions) => {
-  reactionRecords = reactions; // Store full objects
+  reactionRecords = reactions;
   updateHistory();
 });
 
-function updateHistory() {
-  if (!history) return;
-  
-  if (reactionRecords.length === 0) {
-    history.innerHTML = `
-      <div class="empty-state">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        <div>No reaction times recorded yet</div>
-      </div>
-    `;
-    return;
-  }
-  
-  history.innerHTML = "";
-  reactionRecords.slice(0, 10).forEach((record) => {
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <span class="history-time">${record.reactionTime}ms</span>
-      <span class="history-label">${getPerformanceLabel(record.reactionTime)}</span>
-      <button class="delete-btn" onclick="deleteReaction('${record._id}')" title="Delete">×</button>
-    `;
-    history.appendChild(li);
-  });
-}
-
-function getPerformanceLabel(ms) {
-  if (ms < 250) return '🔥 Lightning';
-  if (ms < 350) return '⚡ Fast';
-  if (ms < 450) return '✓ Good';
-  if (ms < 600) return '○ Average';
-  return '○ Slow';
-}
-
 // ========== AUTH MODAL ==========
-
 function showAuthModal() {
   let modal = document.getElementById('authModal');
   if (!modal) {
@@ -480,7 +439,6 @@ function createAuthModal() {
     </div>
   `;
   
-  // Login form handler
   modal.querySelector('#loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const username = document.getElementById('loginUsername').value;
@@ -507,7 +465,6 @@ function createAuthModal() {
     }
   });
   
-  // Register form handler
   modal.querySelector('#registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const username = document.getElementById('regUsername').value;
@@ -578,11 +535,10 @@ async function logout() {
   }
 }
 
-// Show About Modal
+// ========== ABOUT MODAL ==========
 function showAbout() {
   initAudio();
   AudioSystem.playClick();
-  
   displayAboutModal();
 }
 
@@ -607,12 +563,12 @@ function displayAboutModal() {
           <p><strong>REACT: IoT Reflex Analyzer</strong> is an innovative system designed to measure and analyze human reaction times using cutting-edge IoT technology. Combining Arduino hardware with modern web technologies, it creates an engaging platform for testing and tracking your reflexes.</p>
           
           <div class="tech-stack">
-            <span class="tech-badge">Arduino</span>
-            <span class="tech-badge">Node.js</span>
-            <span class="tech-badge">Express</span>
-            <span class="tech-badge">MongoDB</span>
-            <span class="tech-badge">Socket.IO</span>
-            <span class="tech-badge">Web Audio API</span>
+            <span class="tech-badge" data-tech="arduino">Arduino</span>
+            <span class="tech-badge" data-tech="nodejs">Node.js</span>
+            <span class="tech-badge" data-tech="express">Express</span>
+            <span class="tech-badge" data-tech="mongodb">MongoDB</span>
+            <span class="tech-badge" data-tech="socketio">Socket.IO</span>
+            <span class="tech-badge" data-tech="webaudio">Web Audio API</span>
           </div>
         </div>
         
@@ -655,7 +611,8 @@ function displayAboutModal() {
           <div class="team-grid">
             <div class="team-member">
               <div class="team-avatar">
-                <img src="/images/vince.jpg" alt="Developer 1" onerror="this.onerror=null;this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=dev1'" />
+                <img src="/images/vince.jpg" alt="Vince Garcia" 
+                     onerror="this.onerror=null;this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=vince'" />
               </div>
               <h4>Vince Garcia</h4>
               <p class="team-role">Hardware & Firmware</p>
@@ -663,7 +620,8 @@ function displayAboutModal() {
             </div>
             <div class="team-member">
               <div class="team-avatar">
-                <img src="/images/ice.jpeg" alt="Developer 2" onerror="this.onerror=null;this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=dev2'" />
+                <img src="/images/ice.jpeg" alt="Daniel Callejas" 
+                     onerror="this.onerror=null;this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=daniel'" />
               </div>
               <h4>Daniel Callejas</h4>
               <p class="team-role">Backend Development</p>
@@ -671,7 +629,8 @@ function displayAboutModal() {
             </div>
             <div class="team-member">
               <div class="team-avatar">
-                <img src="/images/brix2.jpeg" alt="Developer 3" onerror="this.onerror=null;this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=dev3'" />
+                <img src="/images/brix2.jpeg" alt="Brix Ibuna" 
+                     onerror="this.onerror=null;this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=brix'" />
               </div>
               <h4>Brix Ibuna</h4>
               <p class="team-role">Frontend Development</p>
@@ -679,7 +638,8 @@ function displayAboutModal() {
             </div>
             <div class="team-member">
               <div class="team-avatar">
-                <img src="/images/alvin.png" alt="Developer 4" onerror="this.onerror=null;this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=dev4'" />
+                <img src="/images/alvin.png" alt="Alvin Jr. Castro" 
+                     onerror="this.onerror=null;this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=alvin'" />
               </div>
               <h4>Alvin Jr. Castro</h4>
               <p class="team-role">Full Stack & Audio</p>
@@ -716,30 +676,7 @@ function closeAbout() {
   }
 }
 
-// Delete reaction
-async function deleteReaction(id) {
-  initAudio();
-  
-  if (!confirm('Delete this reaction time?')) return;
-  
-  AudioSystem.playDelete();
-  
-  try {
-    const res = await fetch(`/api/reactions/${id}`, { method: 'DELETE' });
-    if (res.ok) {
-      reactionRecords = reactionRecords.filter(r => r._id !== id);
-      updateHistory();
-      loadStats();
-    } else {
-      alert('Failed to delete reaction');
-    }
-  } catch (err) {
-    console.error('Delete failed:', err);
-    alert('Failed to delete reaction');
-  }
-}
-
-// Show leaderboard
+// ========== LEADERBOARD MODAL ==========
 async function showLeaderboard() {
   initAudio();
   AudioSystem.playClick();
@@ -818,3 +755,42 @@ function closeLeaderboard() {
     setTimeout(() => modal.remove(), 300);
   }
 }
+
+// ========== DELETE REACTION ==========
+async function deleteReaction(id) {
+  initAudio();
+  
+  if (!confirm('Delete this reaction time?')) return;
+  
+  AudioSystem.playDelete();
+  
+  try {
+    const res = await fetch(`/api/reactions/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      reactionRecords = reactionRecords.filter(r => r._id !== id);
+      updateHistory();
+      loadStats();
+    } else {
+      alert('Failed to delete reaction');
+    }
+  } catch (err) {
+    console.error('Delete failed:', err);
+    alert('Failed to delete reaction');
+  }
+}
+
+// ========== GLOBAL EXPORTS ==========
+window.deleteReaction = deleteReaction;
+window.showLeaderboard = showLeaderboard;
+window.closeLeaderboard = closeLeaderboard;
+window.showAbout = showAbout;
+window.closeAbout = closeAbout;
+window.showLoginForm = showLoginForm;
+window.showRegisterForm = showRegisterForm;
+window.logout = logout;
+
+// ========== INITIALIZATION ==========
+window.addEventListener('load', () => {
+  createAudioControls();
+  checkAuth();
+});

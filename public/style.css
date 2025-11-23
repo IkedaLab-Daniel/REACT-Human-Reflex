@@ -359,3 +359,75 @@ h1{font-size:40px;font-weight:800;letter-spacing:1px;margin-bottom:8px}
   
   .about-modal-content,.leaderboard-modal-content{max-height:85vh}
 }
+
+/* Tech Badge Icons */
+.tech-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tech-badge::before {
+  content: '';
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.tech-badge[data-tech="arduino"]::before {
+  background-image: url(../images/arduino.svg);
+}
+
+.tech-badge[data-tech="nodejs"]::before {
+  background-image: url(../images/node.svg);
+}
+
+.tech-badge[data-tech="express"]::before {
+  background-image: url(../images/express.svg);
+}
+
+.tech-badge[data-tech="mongodb"]::before {
+  background-image: url(../images/mongodb.svg);
+}
+
+.tech-badge[data-tech="socketio"]::before {
+  background-image: url(../images/socket-2.svg);
+}
+
+.tech-badge[data-tech="webaudio"]::before {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ffffff"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>');
+}
+
+/* Tech badge colors */
+.tech-badge[data-tech="arduino"] {
+  background: linear-gradient(135deg, #00979D 0%, #00757A 100%);
+  border: 1px solid rgba(0, 151, 157, 0.3);
+}
+
+.tech-badge[data-tech="nodejs"] {
+  background: linear-gradient(135deg, #339933 0%, #66BB66 100%);
+  border: 1px solid rgba(51, 153, 51, 0.3);
+}
+
+.tech-badge[data-tech="express"] {
+  background: linear-gradient(135deg, #000000 0%, #404040 100%);
+  border: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+.tech-badge[data-tech="mongodb"] {
+  background: linear-gradient(135deg, #47A248 0%, #4DB33D 100%);
+  border: 1px solid rgba(71, 162, 72, 0.3);
+}
+
+.tech-badge[data-tech="socketio"] {
+  background: linear-gradient(135deg, #010101 0%, #25C2A0 100%);
+  border: 1px solid rgba(37, 194, 160, 0.3);
+}
+
+.tech-badge[data-tech="webaudio"] {
+  background: black;
+  border: 1px solid rgba(102, 126, 234, 0.3);
+}
